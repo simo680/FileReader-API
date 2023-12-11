@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Локальное файловое хранилище</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #drop-area {
+            width: 300px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            text-align: center;
+            line-height: 200px;
+            margin: 20px;
+            background-color: #fff;
+        }
+
+        #drop-area.highlight {
+            border-color: #2196f3;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item button {
+            background-color: #2196f3;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .file-item button:hover {
+            background-color: #1565c0;
+        }
+
+        #filter-form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="drop-area" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"
+        ondragleave="dragLeaveHandler(event);">
+        Перетащите файлы сюда
+    </div>
+    <input type="file" id="file-input" multiple>
+    <div id="file-list" class="file-list"></div>
+    <select id="sortSelect" onchange="sortFiles()">
+        <option value="name">Сортировать по имени</option>
+        <option value="size">Сортировать по размеру</option>
+        <option value="type">Сортировать по типу</option>
+    </select>
+
+    <script>
+        function dragOverHandler(event) {
+            event.preventDefault();
+            const dropArea = document.getElementById('drop-area');
+            dropArea.classList.add('highlight');
+        }
+
+        function dragLeaveHandler(event) {
+            const dropArea = document.getElementById('drop-area');
+            dropArea.classList.remove('highlight');
+        }
+
+        function dropHandler(event) {
+            event.preventDefault();
+            const dropArea = document.getElementById('drop-area');
+            dropArea.classList.remove('highlight');
+            const files = event.dataTransfer.files;
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            const fileList = document.getElementById('file-list');
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const listItem = document.createElement('div');
+                listItem.className = 'file-item';
+
+                const metadata = {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size
+                };
+
+                listItem.textContent = `Имя файла: ${metadata.name}, Тип файла: ${metadata.type}, Размер файла: ${metadata.size} байт`;
+
+                const downloadButton = document.createElement('button');
+                downloadButton.textContent = 'Скачать';
+                downloadButton.onclick = function () {
+                    downloadFile(metadata);
+                };
+                listItem.appendChild(downloadButton);
+
+                listItem.dataset.name = metadata.name;
+                listItem.dataset.size = metadata.size;
+                listItem.dataset.type = metadata.type;
+
+                fileList.appendChild(listItem);
+                saveToLocalStorage(metadata);
+            }
+        }
+
+        function sortFiles() {
+            const selectedOption = sortSelect.value.toLowerCase();
+            const files = Array.from(document.getElementsByClassName('file-item'));
+
+            files.sort((a, b) => {
+                const aSortValue = a.dataset[selectedOption];
+                const bSortValue = b.dataset[selectedOption];
+
+                if (selectedOption === 'size') {
+                    return parseInt(aSortValue) - parseInt(bSortValue);
+                } else {
+                    return aSortValue.localeCompare(bSortValue);
+                }
+            });
+
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            
+            files.forEach(file => {
+                fileList.appendChild(file);
+            });
+        }
+
+        function saveToLocalStorage(metadata) {
+            const key = metadata.name;
+            const value = JSON.stringify(metadata);
+            localStorage.setItem(key, value);
+        }
+
+        function downloadFile(metadata) {
+            const key = metadata.name;
+            const value = localStorage.getItem(key);
+
+            const blob = new Blob([value], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${key}.json`;
+            link.click();
+        }
+
+        document.getElementById('file-input').addEventListener('change', (event) => {
+            const files = event.target.files;
+            handleFiles(files);
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileList = document.getElementById('file-list');
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                const metadata = JSON.parse(value);
+
+                const listItem = document.createElement('div');
+                listItem.className = 'file-item';
+
+                listItem.textContent = `Имя файла: ${metadata.name}, Размер файла: ${metadata.size} байт`;
+
+                const downloadButton = document.createElement('button');
+                downloadButton.textContent = 'Скачать';
+                downloadButton.onclick = function () {
+                    downloadFile(metadata);
+                };
+                listItem.appendChild(downloadButton);
+
+
+                listItem.dataset.name = metadata.name;
+                listItem.dataset.size = metadata.size;
+                listItem.dataset.type = metadata.type;
+
+                fileList.appendChild(listItem);
+            }
+        });
+    </script>
+</body>
+
+</html>
