@@ -2,53 +2,108 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Локальное файловое хранилище</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Чтение файлов</title>
     <style>
         body {
+            font-family: consolas;
+            line-height: 1.5;
+        }
+
+        body {
+            font-family: consolas;
+            line-height: 1.5;
             background-color: #000000;
+            color: #ffffff;
+        }
+
+        span {
             color: #000000;
+        }
+
+        .drop-area {
+            display: flex;
+            min-height: 100px;
+            max-width: 240px;
+            margin: 100px auto;
+            padding: 2rem 1.5rem 1.5rem;
+            border-radius: 0.25rem;
+            border: 2px dashed #ccc;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23e0e0e0' class='bi bi-card-image' viewBox='0 0 16 16'%3E%3Cpath d='M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z'/%3E%3Cpath d='M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zm13 1a.5.5 0 0 1 .5.5v6l-3.775-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12v.54A.505.505 0 0 1 1 12.5v-9a.5.5 0 0 1 .5-.5h13z'/%3E%3C/svg%3E");
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: 50% 50%;
+        }
+
+        .drop-area-over {
+            border: 2px dashed #2196f3;
+        }
+
+        .drop-area-preview {
+            flex: 0 0 45%;
+            position: relative;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .drop-area-name {
+            text-align: center;
+        }
+
+        .drop-area-remove {
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform: translate(50%, -50%);
+            display: flex;
+            background-color: #424242;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+
+        .drop-area-remove:hover {
+            background-color: #616161;
+        }
+
+        .inputandlist {
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
+            align-items: center;
         }
 
-        #drop-area {
-            width: 300px;
-            height: 200px;
+        #file-input {
             border: 2px dashed #ccc;
-            text-align: center;
-            line-height: 200px;
-            margin: 20px;
-            background-color: #fff;
+            padding: 20px;
         }
 
-        #drop-area.highlight {
-            border-color: #2196f3;
+        #file-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 20px 0;
         }
 
-        .file-list {
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .file-item {
+        #file-list li {
             margin-bottom: 10px;
-            padding: 10px;
             border: 1px solid #ccc;
+            padding: 10px;
             background-color: #fff;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .file-item button {
+        #file-list li button {
             background-color: #2196f3;
             color: #fff;
             border: none;
@@ -56,157 +111,187 @@
             cursor: pointer;
         }
 
-        .file-item button:hover {
+        #file-list li button:hover {
             background-color: #1565c0;
-        }
-
-        #filter-form {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
         }
     </style>
 </head>
 
 <body>
-    <div id="drop-area" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"
-        ondragleave="dragLeaveHandler(event);">
-            Перетащите файлы сюда
+    <div class="drop-area"></div>
+    <div class="inputandlist">
+        <input type="file" id="file-input" multiple />
+        <ul id="file-list"></ul>
     </div>
-    <input type="file" id="file-input">
-    <div id="file-list" class="file-list"></div>
-    <select id="sortSelect" onchange="sortFiles()">
-        <option value="name">Сортировать по имени</option>
-        <option value="size">Сортировать по размеру</option>
-        <option value="type">Сортировать по типу</option>
-    </select>
 
     <script>
-        function dragOverHandler(event) {
-            event.preventDefault();
-            const dropArea = document.getElementById('drop-area');
-            dropArea.classList.add('highlight');
+
+        function initializeDragAndDrop() {
+            const dropArea = document.querySelector(".drop-area");
+            const fileInput = document.querySelector("#file-input");
+
+            dropArea.addEventListener("dragenter", (e) => {
+                e.preventDefault();
+                dropArea.classList.add("drop-area-over");
+            });
+
+            dropArea.addEventListener("dragleave", (e) => {
+                e.preventDefault();
+                dropArea.classList.remove("drop-area-over");
+            });
+
+            dropArea.addEventListener("dragover", (e) => {
+                e.preventDefault();
+            });
+
+            dropArea.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropArea.classList.remove("drop-area-over");
+                const transferredFiles = e.dataTransfer.files;
+
+                handleFiles(transferredFiles);
+            });
+
+            fileInput.addEventListener("change", (e) => {
+                const selectedFiles = e.target.files;
+                handleFiles(selectedFiles);
+                fileInput.value = '';
+            });
         }
 
-        function dragLeaveHandler(event) {
-            const dropArea = document.getElementById('drop-area');
-            dropArea.classList.remove('highlight');
+        function initializePage() {
+            updateFileList();
+            initializeDragAndDrop();
         }
 
-        function dropHandler(event) {
-            event.preventDefault();
-            const dropArea = document.getElementById('drop-area');
-            dropArea.classList.remove('highlight');
-            const files = event.dataTransfer.files;
-            handleFiles(files);
+        function isLocalStorageSupported() {
+            try {
+                const testKey = "test";
+                localStorage.setItem(testKey, testKey);
+                localStorage.removeItem(testKey);
+                return true;
+            } catch (e) {
+                return false;
+            }
         }
 
         function handleFiles(files) {
-            const fileList = document.getElementById('file-list');
+            [...files].forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    saveFileToLocalStorage(file.name, file.type, file.size, e.target.result);
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const listItem = document.createElement('div');
-                listItem.className = 'file-item';
+                    updateFileList();
 
-                const metadata = {
-                    name: file.name,
-                    type: file.type,
-                    size: file.size
+                    addFilePreview(file);
                 };
-
-                listItem.textContent = `Имя файла: ${metadata.name}, Тип файла: ${metadata.type}, Размер файла: ${metadata.size} байт`;
-
-                const downloadButton = document.createElement('button');
-                downloadButton.textContent = 'Скачать';
-                downloadButton.onclick = function () {
-                    downloadFile(metadata);
+                reader.onerror = function (e) {
+                    console.error(`Error reading file: ${file.name}`);
                 };
-                listItem.appendChild(downloadButton);
+                reader.readAsDataURL(file);
+            });
+        }
 
-                listItem.dataset.name = metadata.name;
-                listItem.dataset.size = metadata.size;
-                listItem.dataset.type = metadata.type;
-
-                fileList.appendChild(listItem);
-                saveToLocalStorage(metadata);
+        function saveFileToLocalStorage(fileName, fileType, fileSize, fileDataUrl) {
+            if (isLocalStorageSupported()) {
+                let files = JSON.parse(localStorage.getItem("files")) || [];
+                files.push({ name: fileName, type: fileType, size: fileSize, dataUrl: fileDataUrl });
+                localStorage.setItem("files", JSON.stringify(files));
+            } else {
+                console.error("Local storage is not supported!");
             }
         }
 
-        function sortFiles() {
-            const selectedOption = sortSelect.value.toLowerCase();
-            const files = Array.from(document.getElementsByClassName('file-item'));
+        function removeFileFromLocalStorage(fileName) {
+            if (isLocalStorageSupported()) {
+                let files = JSON.parse(localStorage.getItem("files")) || [];
+                files = files.filter((file) => file.name !== fileName);
+                localStorage.setItem("files", JSON.stringify(files));
 
-            files.sort((a, b) => {
-                const aSortValue = a.dataset[selectedOption];
-                const bSortValue = b.dataset[selectedOption];
+                updateFileList();
+            } else {
+                console.error("Local storage is not supported!");
+            }
+        }
 
-                if (selectedOption === 'size') {
-                    return parseInt(aSortValue) - parseInt(bSortValue);
-                } else {
-                    return aSortValue.localeCompare(bSortValue);
-                }
-            });
+        function updateFileList() {
+            const fileList = document.querySelector("#file-list");
+            const files = JSON.parse(localStorage.getItem("files")) || [];
 
-            const fileList = document.getElementById('file-list');
-            fileList.innerHTML = '';
+            while (fileList.firstChild) {
+                fileList.removeChild(fileList.firstChild);
+            }
 
-            files.forEach(file => {
-                fileList.appendChild(file);
+            files.forEach((file) => {
+                const listItem = document.createElement("li");
+
+                const fileNameSpan = document.createElement("span");
+                fileNameSpan.textContent = `НАЗВАНИЕ: ${file.name}`;
+                listItem.appendChild(fileNameSpan);
+
+                const fileTypeSpan = document.createElement("span");
+                fileTypeSpan.textContent = ` Тип: ${file.type}`;
+                listItem.appendChild(fileTypeSpan);
+
+                const fileSizeSpan = document.createElement("span");
+                fileSizeSpan.textContent = ` Размер Файла: ${file.size} байт`;
+                listItem.appendChild(fileSizeSpan);
+
+                const downloadButton = document.createElement("button");
+                downloadButton.textContent = "Скачать";
+                downloadButton.onclick = function () {
+                    downloadFile(file);
+                };
+                listItem.appendChild(downloadButton);
+
+                fileList.appendChild(listItem);
             });
         }
 
-        function saveToLocalStorage(metadata) {
-            const key = metadata.name;
-            const value = JSON.stringify(metadata);
-            localStorage.setItem(key, value);
-        }
-
-        function downloadFile(metadata) {
-            const key = metadata.name;
-            const value = localStorage.getItem(key);
-
-            const blob = new Blob([value], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${key}`;
+        function downloadFile(file) {
+            const link = document.createElement("a");
+            link.href = file.dataUrl;
+            link.download = file.name;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
         }
 
-        document.getElementById('file-input').addEventListener('change', (event) => {
-            const files = event.target.files;
-            handleFiles(files);
-        });
+        function addFilePreview(file) {
+            const dropArea = document.querySelector(".drop-area");
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const fileList = document.getElementById('file-list');
+            const dropAreaPreview = document.createElement("div");
+            dropAreaPreview.className = "drop-area-preview";
 
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                const value = localStorage.getItem(key);
-                const metadata = JSON.parse(value);
+            const fileImage = document.createElement("img");
+            fileImage.className = "drop-area-image";
+            fileImage.src = URL.createObjectURL(file);
+            fileImage.alt = file.name;
+            dropAreaPreview.appendChild(fileImage);
 
-                const listItem = document.createElement('div');
-                listItem.className = 'file-item';
+            const fileNameDiv = document.createElement("div");
+            fileNameDiv.className = "drop-area-name";
+            fileNameDiv.textContent = file.name;
+            dropAreaPreview.appendChild(fileNameDiv);
 
-                listItem.textContent = `Имя файла: ${metadata.name}, Размер файла: ${metadata.size} байт`;
+            const removeButton = document.createElement("div");
+            removeButton.className = "drop-area-remove";
+            removeButton.innerHTML = `
+                <svg viewBox="0 0 24 24" height="24" width="24">
+                    <path d="M0 0h24v24H0z" fill="none"></path>
+                    <path fill="#f5f5f5" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
+                </svg>
+            `;
+            removeButton.addEventListener("click", function () {
+                removeFileFromLocalStorage(file.name);
+                dropAreaPreview.remove();
+            });
+            dropAreaPreview.appendChild(removeButton);
 
-                const downloadButton = document.createElement('button');
-                downloadButton.textContent = 'Скачать';
-                downloadButton.onclick = function () {
-                    downloadFile(metadata);
-                };
-                listItem.appendChild(downloadButton);
+            dropArea.appendChild(dropAreaPreview);
+        }
 
-
-                listItem.dataset.name = metadata.name;
-                listItem.dataset.size = metadata.size;
-                listItem.dataset.type = metadata.type;
-
-                fileList.appendChild(listItem);
-            }
-        });
+        window.addEventListener("load", initializePage);
     </script>
 </body>
 
