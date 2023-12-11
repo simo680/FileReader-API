@@ -32,10 +32,6 @@
             border-color: #2196f3;
         }
 
-        #file-input {
-            display: none;
-        }
-
         .file-list {
             margin-top: 20px;
             max-height: 300px;
@@ -76,9 +72,9 @@
 <body>
     <div id="drop-area" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"
         ondragleave="dragLeaveHandler(event);">
-        Перетащите файлы сюда
+            Перетащите файлы сюда
     </div>
-    <input type="file" id="file-input" multiple>
+    <input type="file" id="file-input">
     <div id="file-list" class="file-list"></div>
     <select id="sortSelect" onchange="sortFiles()">
         <option value="name">Сортировать по имени</option>
@@ -155,7 +151,7 @@
 
             const fileList = document.getElementById('file-list');
             fileList.innerHTML = '';
-            
+
             files.forEach(file => {
                 fileList.appendChild(file);
             });
@@ -174,7 +170,7 @@
             const blob = new Blob([value], { type: 'application/json' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `${key}.json`;
+            link.download = `${key}`;
             link.click();
         }
 
